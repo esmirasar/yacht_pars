@@ -1,14 +1,15 @@
 import requests
 from bs4 import BeautifulSoup
 
-list_category = []
 href = []
+list_category = []
 
 
+# Парсинг каталога и категорий товаров
 def parsing_catalog():
     response = requests.get('https://yacht-parts.ru/catalog/')
 
-    parsing_product = BeautifulSoup(response.text, 'html.parser')
+    parsing_product = BeautifulSoup(response.text, 'lxml')
 
     products = parsing_product.find_all('div', class_='catalog_section_list')
 
@@ -17,26 +18,25 @@ def parsing_catalog():
 
         subcategory = section_item.find_all('li', class_='sect')
 
-        for i in subcategory:
-            list_category.append(i.a.text)
-            href.append(i.a['href'])
+        list_category.extend([i.a.text for i in subcategory])
+        href.extend([i.a['href'] for i in subcategory])
 
     return href
 
 
-def parsing_card():
+# Парсинг ссылок на отдельные категории
+def parsing_href():
     list_name = []
+    url_name = 'https://yacht-parts.ru/'
     for i in href:
         list_name.append(i)
-        url_name = 'https://yacht-parts.ru/' + i
-        response = requests.get(url_name)
-        parsing_product = BeautifulSoup(response.text, 'html.parser')
-        parsing_name_product = parsing_product.find_all('div', class_='item-title')
-        for j in parsing_name_product:
-            list_name.append(j.find('span').text)
+        url_name += i
+    response = requests.get(url_name)
+    parsing_product = BeautifulSoup(response.text, 'html.parser').find_all('div', class_='item-title')
+    list_name.extend([j.find('span').text for j in parsing_product])
 
     return list_name
 
 
 parsing_catalog()
-print(parsing_card())
+print(*parsing_href(), sep='\n')
